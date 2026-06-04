@@ -1,0 +1,104 @@
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap');
+
+:root {
+  /* Warm rose / coral palette — soft, romantic, not loud */
+  --p50: #fff1f5;
+  --p100: #ffe0eb;
+  --p200: #ffc1d6;
+  --p300: #ff97b6;
+  --p400: #fb6f99;
+  --p500: #f24b7e;
+  --p600: #df2e68;
+  --p700: #b51e52;
+  --p800: #84153c;
+  --p900: #2a0a18;
+
+  --ink: #1a0a12;
+  --ink2: #3d2531;
+  --ink3: #70525e;
+  --muted: #a8929a;
+  --border: rgba(223, 46, 104, 0.15);
+  --border2: rgba(223, 46, 104, 0.28);
+  --surface: #fffafc;
+  --surface2: #fdf1f6;
+  --surface3: #fce6ee;
+  --white: #ffffff;
+
+  --success: #16a34a;
+  --success-bg: #f0fdf4;
+  --danger: #dc2626;
+  --danger-bg: #fef2f2;
+  --warning: #d97706;
+  --warning-bg: #fffbeb;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+
+  --font-display: 'Syne', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+
+  --shadow-sm: 0 1px 3px rgba(132, 21, 60, 0.08);
+  --shadow-md: 0 4px 16px rgba(132, 21, 60, 0.12);
+  --shadow-lg: 0 8px 32px rgba(132, 21, 60, 0.16);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+button {
+  font-family: var(--font-body);
+  cursor: pointer;
+  border: none;
+  outline: none;
+  background: none;
+}
+
+input, textarea {
+  font-family: var(--font-body);
+  outline: none;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--p300);
+  border-radius: 2px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}

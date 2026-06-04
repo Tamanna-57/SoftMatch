@@ -1,0 +1,165 @@
+.page {
+  min-height: 100vh;
+  background: var(--surface);
+  padding: 3rem 1.5rem;
+  display: flex;
+  justify-content: center;
+}
+
+.inner {
+  width: 100%;
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+.header { margin-bottom: 0; }
+
+.stepBadge {
+  display: inline-block;
+  background: var(--p50);
+  color: var(--p600);
+  border: 1px solid var(--p200);
+  border-radius: var(--radius-full);
+  padding: 4px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  margin-bottom: 1rem;
+  text-transform: uppercase;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.2;
+  margin-bottom: 0.4rem;
+}
+
+.title em {
+  font-style: italic;
+  color: var(--p600);
+}
+
+.sub {
+  font-size: 13px;
+  color: var(--ink3);
+}
+
+.sectionLabel {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+
+.tagGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tag {
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-full);
+  padding: 7px 16px;
+  font-size: 13px;
+  color: var(--ink2);
+  transition: all 0.18s;
+  cursor: pointer;
+}
+
+.tag:hover {
+  border-color: var(--p400);
+  color: var(--p600);
+  background: var(--p50);
+}
+
+.tagSelected {
+  background: var(--p600) !important;
+  border-color: var(--p600) !important;
+  color: white !important;
+}
+
+.sliderSection {
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.sliderRow {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sliderMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sliderName {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink2);
+}
+
+.sliderEnds {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.sliderVal {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--p600);
+  min-width: 28px;
+  text-align: center;
+}
+
+.slider {
+  width: 100%;
+  accent-color: var(--p500);
+  height: 4px;
+}
+
+.footer {}
+
+.findBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  background: var(--p600);
+  color: white;
+  border-radius: var(--radius-md);
+  padding: 14px 28px;
+  font-size: 15px;
+  font-weight: 500;
+  font-family: var(--font-display);
+  transition: background 0.2s, transform 0.15s;
+}
+
+.findBtn:hover {
+  background: var(--p500);
+  transform: translateY(-1px);
+}
+
+.findBtn:active {
+  transform: scale(0.98);
+}

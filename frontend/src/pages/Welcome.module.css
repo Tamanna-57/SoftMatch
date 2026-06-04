@@ -1,0 +1,201 @@
+.page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  background: var(--p900);
+}
+
+.bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.particle {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--p300);
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  padding: 2rem;
+  max-width: 420px;
+  width: 100%;
+}
+
+.logoArea {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 1.5rem;
+}
+
+.logoRing {
+  position: absolute;
+  inset: 0;
+}
+
+.logoRing svg {
+  width: 100%;
+  height: 100%;
+}
+
+.logoInner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logoIcon {
+  font-size: 28px;
+  color: var(--p300);
+}
+
+.headline {
+  font-family: var(--font-display);
+  font-size: 52px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: 8px;
+  line-height: 1;
+  margin-bottom: 1rem;
+}
+
+.tagline {
+  font-size: 18px;
+  color: var(--p200);
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+  font-weight: 300;
+}
+
+.tagline em {
+  font-style: italic;
+  color: var(--p100);
+  font-weight: 500;
+}
+
+.identityCard {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(159, 147, 243, 0.12);
+  border: 1px solid rgba(159, 147, 243, 0.25);
+  border-radius: var(--radius-full);
+  padding: 8px 18px;
+  margin-bottom: 1.5rem;
+}
+
+.identityDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #6ee7b7;
+  flex-shrink: 0;
+}
+
+.identityLabel {
+  font-size: 11px;
+  color: var(--p300);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.identityName {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--p100);
+  font-family: var(--font-display);
+}
+
+.subtext {
+  font-size: 14px;
+  color: var(--p300);
+  line-height: 1.7;
+  margin-bottom: 2rem;
+  font-weight: 300;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 1.5rem;
+}
+
+.btnPrimary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(135deg, var(--p400), var(--p600));
+  color: #fff;
+  border-radius: var(--radius-md);
+  padding: 14px 28px;
+  font-size: 15px;
+  font-weight: 500;
+  font-family: var(--font-display);
+  letter-spacing: 0.3px;
+  box-shadow: 0 6px 20px rgba(242, 75, 126, 0.35);
+  transition: filter 0.2s, transform 0.15s, box-shadow 0.2s;
+}
+
+.btnPrimary:hover {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 28px rgba(242, 75, 126, 0.45);
+}
+
+.btnPrimary:active {
+  transform: scale(0.98);
+}
+
+.btnSoft {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(255, 151, 182, 0.10);
+  color: var(--p200);
+  border: 1px solid rgba(255, 151, 182, 0.30);
+  border-radius: var(--radius-md);
+  padding: 12px 28px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.2s, color 0.2s, transform 0.15s;
+}
+
+.btnSoft:hover {
+  background: rgba(255, 151, 182, 0.18);
+  color: var(--p100);
+  transform: translateY(-1px);
+}
+
+.btnGhost {
+  background: transparent;
+  color: var(--p300);
+  border: 1px solid rgba(255, 151, 182, 0.22);
+  border-radius: var(--radius-md);
+  padding: 12px 28px;
+  font-size: 14px;
+  transition: background 0.2s, color 0.2s;
+}
+
+.btnGhost:hover {
+  background: rgba(255, 151, 182, 0.08);
+  color: var(--p100);
+}
+
+.disclaimer {
+  font-size: 12px;
+  color: var(--p600);
+  line-height: 1.6;
+}

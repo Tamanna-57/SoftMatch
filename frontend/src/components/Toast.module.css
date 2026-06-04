@@ -1,0 +1,30 @@
+.container {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  pointer-events: none;
+}
+
+.toast {
+  background: var(--ink2);
+  color: white;
+  border-radius: var(--radius-full);
+  padding: 10px 20px;
+  font-size: 13px;
+  cursor: pointer;
+  pointer-events: all;
+  white-space: nowrap;
+  box-shadow: var(--shadow-md);
+}
+
+.success { background: var(--success); }
+.danger { background: var(--danger); }
+.info { background: var(--p600); }
+
+.toastText { font-weight: 400; }

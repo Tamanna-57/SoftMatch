@@ -1,0 +1,167 @@
+.page {
+  min-height: 100vh;
+  background: var(--surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.5rem;
+}
+
+.inner {
+  width: 100%;
+  max-width: 400px;
+}
+
+.backLink {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 1.5rem;
+  display: block;
+  transition: color 0.15s;
+}
+
+.backLink:hover { color: var(--ink3); }
+
+.logoArea { margin-bottom: 1rem; }
+
+.logo {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--p700);
+  letter-spacing: 3px;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+
+.sub {
+  font-size: 13px;
+  color: var(--ink3);
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+
+.identityBadge {
+  background: var(--p50);
+  border: 1px solid var(--p200);
+  border-radius: var(--radius-lg);
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 1.5rem;
+}
+
+.identityAvatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--p600);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.identityName {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--p800);
+}
+
+.identityNote {
+  font-size: 11px;
+  color: var(--p600);
+  margin-top: 1px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.input {
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 11px 14px;
+  font-size: 14px;
+  color: var(--ink);
+  transition: border-color 0.15s;
+}
+
+.input:focus {
+  border-color: var(--p500);
+}
+
+.input::placeholder { color: var(--muted); }
+
+.error {
+  font-size: 13px;
+  color: var(--danger);
+  background: var(--danger-bg);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+}
+
+.submitBtn {
+  background: var(--p600);
+  color: white;
+  border-radius: var(--radius-md);
+  padding: 13px;
+  font-size: 15px;
+  font-weight: 500;
+  font-family: var(--font-display);
+  width: 100%;
+  transition: background 0.15s;
+  margin-top: 4px;
+}
+
+.submitBtn:hover:not(:disabled) { background: var(--p500); }
+.submitBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.toggleBtn {
+  color: var(--p600);
+  font-size: 13px;
+  text-align: center;
+  padding: 4px;
+  transition: color 0.15s;
+}
+
+.toggleBtn:hover { color: var(--p500); }
+
+.skipBtn {
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+  padding: 4px;
+  transition: color 0.15s;
+}
+
+.skipBtn:hover { color: var(--ink3); }
