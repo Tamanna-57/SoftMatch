@@ -7,22 +7,29 @@ living file — treat it as the running brain of the project.
 
 ---
 
-## 1. What changed in this pass
+## 1. What's built so far
 
-- **Rebranded** Aura → **SoftMatch** (repo name, titles, wordmarks, favicon ♥).
-- **Re-themed** the whole app from violet to a **warm rose / coral** palette.
-  All colors live as `--p50 … --p900` tokens in
-  `frontend/src/styles/globals.css` — change those and the entire app
-  re-themes. No need to touch individual components.
-- **Added "Soft", an AI companion** (`/companion`):
-  - A chill, low-pressure chat ("like a friend at 2am, not a form").
-  - It **quietly extracts signals** — interests, vibe, mood — from what you
-    type and shows them filling up live.
-  - One tap on _"use what Soft learned"_ pre-fills your matching profile so
-    you skip the boring questionnaire. **This is the "chill onboarding" idea.**
-  - Runs **fully offline** (rule-based brain in
-    `frontend/src/utils/aiCompanion.js`) so there's zero cost / no API key
-    needed to demo. A real LLM is a drop-in upgrade (see §3).
+- **Rebranded** Aura → **SoftMatch**; **warm rose/coral theme** (all colors are
+  `--p50 … --p900` tokens in `frontend/src/styles/globals.css` — edit those to
+  retune the whole app).
+- **Two entry paths** (`Welcome`): **create a profile** (permanent account) or
+  **chat anonymously** (temporary, lives only in the browser cache). No name →
+  auto random two-word handle.
+- **Bumble-style profile + preferences**, all from a single attribute schema
+  (`frontend/src/utils/attributes.js`). Every field is optional and pick-only —
+  users never invent fields. Profile = who you are; Preferences = what you want
+  on those *same* fields.
+- **Two-way matching engine** (`frontend/src/utils/matching.js`): a match is
+  valid only when *my profile fits your prefs AND your profile fits mine*. This
+  is the "Delhi ↔ Delhi" fix — shared interest isn't enough; each person's
+  reality must satisfy the other's wishes. Cards show "why you matched".
+- **Direct chat** (no swipe) with **Skip** + **Rate** (5 hearts, no comments).
+  Ratings build a credibility score shown on profiles; persisted for permanent
+  accounts, in-session for temporary ones.
+
+> **AI is intentionally deferred** for now (removed the old "Soft" companion).
+> See §3 for how to bring it back later as a drop-in — no model training needed,
+> just a prompted LLM + embeddings for smarter matching.
 
 ---
 

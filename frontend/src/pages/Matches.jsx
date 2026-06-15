@@ -1,129 +1,90 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import useStore from '../store/useStore'
-import { connectSocket } from '../utils/socket'
-import { calcCompatibility, getTrustLabel, getCompatibilityColor, INTENT_LABELS } from '../utils/matching'
+import { rankMatches, getRatingLabel, getCompatibilityColor } from '../utils/matching'
+import { CITIES, GENDERS, RELATIONSHIP, SMOKING, HOBBIES } from '../utils/attributes'
 import styles from './Matches.module.css'
 
-// Generate demo matches for when backend isn't running
-function generateDemoMatches(user, intent, vibes, interests, sliders) {
-  const names = ['NightThinker','CodeNomad','LostFounder','QuietReader','DeepBuilder','LunarDreamer','SilentCoder','BoldMind']
-  const nums = [42, 77, 12, 55, 88, 31, 64, 19]
-  const demoVibes = [['night owl','builder','overthinker'],['introvert','calm energy','creative'],['ambitious','builder','night owl'],['empath','introvert','analytical']]
-  const demoInterests = [['tech','startups','philosophy'],['books','films','design'],['startups','tech','finance'],['books','music','philosophy']]
-  const intents = ['deep_talk','startup','vent_support','philosophy','random_fun']
-  const trusts = [82, 71, 55, 90, 43, 67]
+const NAMES = ['NightThinker','CodeNomad','LostFounder','QuietReader','VelvetBloom','LunarFox','AmberRiver','SilentComet','BoldPoet','CalmLens']
 
-  return Array.from({ length: 5 }, (_, i) => {
-    const matchUser = {
-      intent: intent || intents[i % intents.length],
-      vibes: demoVibes[i % demoVibes.length],
-      interests: demoInterests[i % demoInterests.length],
-      sliders: { deepTalks: 5 + (i % 5), ambition: 4 + (i % 6) },
-    }
-    const userProfile = { intent, vibes, interests, sliders }
-    const compat = calcCompatibility(userProfile, matchUser)
+function rand(arr) { return arr[Math.floor(Math.random() * arr.length)] }
+function sample(arr, n) {
+  const a = [...arr].sort(() => Math.random() - 0.5)
+  return a.slice(0, n)
+}
+
+// A pool of full anonymous profiles. Their prefs are mostly lenient so the
+// user's own preferences do the filtering — demonstrating the two-way logic.
+function generateDemoPool() {
+  return Array.from({ length: 9 }, (_, i) => {
+    const ratingCount = Math.floor(Math.random() * 40)
     return {
       id: `demo-${i}`,
-      username: `${names[i]}_${nums[i]}`,
-      intent: matchUser.intent,
-      vibes: matchUser.vibes,
-      interests: matchUser.interests,
-      trustScore: trusts[i % trusts.length],
-      compatibility: compat,
-      isDemo: true,
+      username: `${NAMES[i % NAMES.length]}_${10 + i}`,
+      rating: ratingCount ? +(3 + Math.random() * 2).toFixed(1) : 0,
+      ratingCount,
+      profile: {
+        name: Math.random() > 0.5 ? '' : NAMES[i % NAMES.length],
+        age: 19 + Math.floor(Math.random() * 16),
+        gender: rand(GENDERS),
+        city: rand(CITIES),
+        relationship: rand(RELATIONSHIP),
+        smoking: rand(SMOKING),
+        drinking: rand(['never', 'socially', 'regularly']),
+        kids: rand(["don't have", 'want someday', "don't want"]),
+        politics: null,
+        hobbies: sample(HOBBIES, 3 + Math.floor(Math.random() * 3)),
+        bio: '',
+      },
+      // lenient: they accept anyone (so the user's filters are what matters)
+      prefs: { ageMin: 18, ageMax: 60, gender: [], city: [], relationship: [], smoking: [], drinking: [], kids: [] },
     }
-  }).sort((a, b) => b.compatibility - a.compatibility)
+  })
 }
 
 export default function Matches() {
   const navigate = useNavigate()
-  const { user, intent, vibes, interests, sliders, matches, setMatches, setActiveMatch, addNotification } = useStore()
+  const { user, profile, prefs, matches, setMatches, setActiveMatch, skipped } = useStore()
   const [searching, setSearching] = useState(true)
-  const [filterIntent, setFilterIntent] = useState(null)
-  const socketRef = useRef(null)
 
   useEffect(() => {
-    if (!user) return
-
-    const socket = connectSocket(user.id)
-    socketRef.current = socket
-
-    // Emit user profile to get matches
-    socket.emit('find_matches', {
-      userId: user.id,
-      username: user.username,
-      intent,
-      vibes,
-      interests,
-      sliders,
-      trustScore: user.trustScore,
-    })
-
-    socket.on('matches_found', (serverMatches) => {
+    if (!user) { navigate('/'); return }
+    setSearching(true)
+    const t = setTimeout(() => {
+      const me = { profile, prefs }
+      const pool = generateDemoPool().filter(c => !skipped.includes(c.id))
+      setMatches(rankMatches(me, pool))
       setSearching(false)
-      const enriched = serverMatches.map(m => ({
-        ...m,
-        compatibility: calcCompatibility({ intent, vibes, interests, sliders }, m)
-      })).sort((a, b) => b.compatibility - a.compatibility)
-      setMatches(enriched)
-    })
-
-    socket.on('new_match', (match) => {
-      const enriched = { ...match, compatibility: calcCompatibility({ intent, vibes, interests, sliders }, match) }
-      setMatches([...matches, enriched].sort((a, b) => b.compatibility - a.compatibility))
-      addNotification({ type: 'match', text: `${match.username} is looking to connect` })
-    })
-
-    socket.on('connect_error', () => {
-      // Backend not available — use demo data
-      setTimeout(() => {
-        setSearching(false)
-        setMatches(generateDemoMatches(user, intent, vibes, interests, sliders))
-      }, 1800)
-    })
-
-    // Always fall back to demo data after timeout
-    const timeout = setTimeout(() => {
-      if (searching) {
-        setSearching(false)
-        if (matches.length === 0) {
-          setMatches(generateDemoMatches(user, intent, vibes, interests, sliders))
-        }
-      }
-    }, 3000)
-
-    return () => {
-      clearTimeout(timeout)
-      socket.off('matches_found')
-      socket.off('new_match')
-      socket.off('connect_error')
-    }
-  }, [user])
+    }, 1400)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleOpenChat = (match) => {
     setActiveMatch(match)
     navigate(`/chat/${match.id}`)
   }
 
-  const filtered = filterIntent
-    ? matches.filter(m => m.intent === filterIntent)
-    : matches
-
-  const uniqueIntents = [...new Set(matches.map(m => m.intent).filter(Boolean))]
+  const reroll = () => {
+    setSearching(true)
+    setMatches([])
+    setTimeout(() => {
+      const pool = generateDemoPool().filter(c => !skipped.includes(c.id))
+      setMatches(rankMatches({ profile, prefs }, pool))
+      setSearching(false)
+    }, 1000)
+  }
 
   return (
     <div className={styles.page}>
       <div className={styles.topbar}>
-        <button className={styles.backBtn} onClick={() => navigate('/interests')}>
+        <button className={styles.backBtn} onClick={() => navigate('/preferences')}>
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
             <path d="M11 4l-5 5 5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </button>
-        <div className={styles.topbarCenter}>
-          <span className={styles.appLogo}>SoftMatch</span>
-        </div>
+        <span className={styles.appLogo}>SoftMatch</span>
         <button className={styles.profileBtn} onClick={() => navigate('/profile')}>
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
             <circle cx="10" cy="7" r="3.5" stroke="currentColor" strokeWidth="1.3"/>
@@ -135,29 +96,22 @@ export default function Matches() {
       <div className={styles.content}>
         {searching ? (
           <div className={styles.searching}>
-            <motion.div
-              className={styles.searchRing}
+            <motion.div className={styles.searchRing}
               animate={{ rotate: 360 }}
-              transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-            />
-            <p className={styles.searchText}>finding relevant people…</p>
-            <p className={styles.searchSub}>matching by intent, vibe & interests</p>
+              transition={{ duration: 2, repeat: Infinity, ease: 'linear' }} />
+            <p className={styles.searchText}>finding people who fit both ways…</p>
+            <p className={styles.searchSub}>they match you · you match them</p>
           </div>
         ) : (
           <>
             <div className={styles.pageHeader}>
               <div>
                 <h2 className={styles.pageTitle}>your matches</h2>
-                <p className={styles.pageSub}>{filtered.length} people matched your energy</p>
+                <p className={styles.pageSub}>
+                  {matches.length} {matches.length === 1 ? 'person fits' : 'people fit'} both ways
+                </p>
               </div>
-              <button className={styles.refreshBtn} onClick={() => {
-                setSearching(true)
-                setMatches([])
-                setTimeout(() => {
-                  setSearching(false)
-                  setMatches(generateDemoMatches(user, intent, vibes, interests, sliders))
-                }, 1500)
-              }}>
+              <button className={styles.refreshBtn} onClick={reroll}>
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                   <path d="M14 8a6 6 0 11-2-4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
                   <path d="M14 3v3h-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -165,37 +119,19 @@ export default function Matches() {
               </button>
             </div>
 
-            {uniqueIntents.length > 1 && (
-              <div className={styles.filters}>
-                <button
-                  className={`${styles.filter} ${!filterIntent ? styles.filterActive : ''}`}
-                  onClick={() => setFilterIntent(null)}
-                >all</button>
-                {uniqueIntents.map(i => (
-                  <button
-                    key={i}
-                    className={`${styles.filter} ${filterIntent === i ? styles.filterActive : ''}`}
-                    onClick={() => setFilterIntent(i)}
-                  >{INTENT_LABELS[i] || i}</button>
-                ))}
-              </div>
-            )}
-
             <div className={styles.list}>
               <AnimatePresence>
-                {filtered.map((match, idx) => (
-                  <MatchCard
-                    key={match.id}
-                    match={match}
-                    idx={idx}
-                    onOpen={() => handleOpenChat(match)}
-                  />
+                {matches.map((m, idx) => (
+                  <MatchCard key={m.id} m={m} idx={idx} onOpen={() => handleOpenChat(m)} />
                 ))}
               </AnimatePresence>
 
-              {filtered.length === 0 && (
+              {matches.length === 0 && (
                 <div className={styles.empty}>
-                  <p>no matches for this filter</p>
+                  <div className={styles.emptyIcon}>🔍</div>
+                  <p className={styles.emptyTitle}>no two-way matches yet</p>
+                  <p className={styles.emptySub}>your filters might be strict. try loosening a preference.</p>
+                  <button className={styles.emptyBtn} onClick={() => navigate('/preferences')}>edit preferences</button>
                 </div>
               )}
             </div>
@@ -206,65 +142,53 @@ export default function Matches() {
   )
 }
 
-function MatchCard({ match, idx, onOpen }) {
-  const trust = getTrustLabel(match.trustScore || 50)
-  const compatColor = getCompatibilityColor(match.compatibility)
+function MatchCard({ m, idx, onOpen }) {
+  const display = m.profile.name || m.username
+  const r = getRatingLabel(m.rating, m.ratingCount)
+  const color = getCompatibilityColor(m.match.score)
+  const meta = [m.profile.age, m.profile.city, m.profile.relationship].filter(Boolean).join(' · ')
 
   return (
     <motion.div
       className={styles.card}
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
-      transition={{ delay: idx * 0.07, duration: 0.4 }}
+      initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+      transition={{ delay: idx * 0.06, duration: 0.4 }}
       whileHover={{ y: -2 }}
       onClick={onOpen}
     >
       <div className={styles.cardTop}>
-        <div className={styles.avatar}>
-          {match.username.slice(0, 2).toUpperCase()}
-        </div>
+        <div className={styles.avatar}>{display.slice(0, 2).toUpperCase()}</div>
         <div className={styles.cardInfo}>
           <div className={styles.cardName}>
-            {match.username}
-            {match.trustScore >= 60 && (
-              <span className={styles.trustBadge} style={{ color: trust.color, borderColor: trust.color + '40', background: trust.color + '12' }}>
-                ✓ {trust.label}
-              </span>
-            )}
+            {display}
+            <span className={styles.ratingBadge} style={{ color: r.color, borderColor: r.color + '40', background: r.color + '12' }}>
+              {m.ratingCount ? `★ ${m.rating}` : '☆'} · {r.label}
+            </span>
           </div>
-          <div className={styles.cardIntent}>{INTENT_LABELS[match.intent] || match.intent}</div>
+          {meta && <div className={styles.cardMeta}>{meta}</div>}
         </div>
-        <div className={styles.compatScore} style={{ color: compatColor }}>
-          {match.compatibility}%
-        </div>
+        <div className={styles.score} style={{ color }}>{m.match.score}%</div>
       </div>
 
-      {match.vibes?.length > 0 && (
-        <div className={styles.tagRow}>
-          {match.vibes.slice(0, 3).map(v => (
-            <span key={v} className={styles.vibePill}>{v}</span>
+      {m.match.reasons.length > 0 && (
+        <ul className={styles.reasons}>
+          {m.match.reasons.slice(0, 3).map((reason, i) => (
+            <li key={i}><span className={styles.check}>✓</span> {reason}</li>
           ))}
-        </div>
+        </ul>
       )}
 
-      {match.interests?.length > 0 && (
+      {m.profile.hobbies?.length > 0 && (
         <div className={styles.tagRow}>
-          {match.interests.slice(0, 4).map(i => (
-            <span key={i} className={styles.interestPill}>{i}</span>
-          ))}
+          {m.profile.hobbies.slice(0, 4).map(h => <span key={h} className={styles.tag}>{h}</span>)}
         </div>
       )}
 
       <div className={styles.cardBottom}>
-        <div className={styles.compatBar}>
-          <motion.div
-            className={styles.compatFill}
-            initial={{ width: 0 }}
-            animate={{ width: `${match.compatibility}%` }}
-            transition={{ delay: 0.3, duration: 0.6, ease: 'easeOut' }}
-            style={{ background: compatColor }}
-          />
+        <div className={styles.bar}>
+          <motion.div className={styles.barFill}
+            initial={{ width: 0 }} animate={{ width: `${m.match.score}%` }}
+            transition={{ delay: 0.3, duration: 0.6 }} style={{ background: color }} />
         </div>
         <span className={styles.startChat}>start chat →</span>
       </div>

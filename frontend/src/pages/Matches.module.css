@@ -283,3 +283,80 @@
   padding: 2rem;
   font-size: 14px;
 }
+
+/* ── two-way match card additions ── */
+.score {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.cardMeta {
+  font-size: 12.5px;
+  color: var(--p600);
+  margin-top: 2px;
+  text-transform: capitalize;
+}
+.ratingBadge {
+  font-size: 10px;
+  font-weight: 500;
+  border: 1px solid;
+  border-radius: var(--radius-full);
+  padding: 2px 7px;
+  margin-left: 8px;
+  white-space: nowrap;
+}
+.reasons {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.reasons li {
+  font-size: 12.5px;
+  color: var(--ink2);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.check {
+  color: var(--p500);
+  font-weight: 700;
+  font-size: 11px;
+}
+.tag {
+  background: var(--surface2);
+  color: var(--ink3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  padding: 4px 10px;
+  font-size: 11.5px;
+}
+.bar {
+  flex: 1;
+  height: 4px;
+  background: var(--surface3);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.barFill { height: 100%; border-radius: 2px; }
+.emptyIcon { font-size: 32px; margin-bottom: 8px; }
+.emptyTitle {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--ink);
+}
+.emptySub { font-size: 13px; color: var(--ink3); margin-top: 4px; }
+.emptyBtn {
+  margin-top: 14px;
+  padding: 10px 20px;
+  border-radius: var(--radius-full);
+  background: var(--p500);
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: 500;
+}
+.emptyBtn:hover { background: var(--p400); }

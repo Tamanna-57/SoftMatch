@@ -327,3 +327,69 @@
   color: var(--p600);
   font-size: 14px;
 }
+
+/* ── match banner: pct + reason + actions ── */
+.compatPct { font-weight: 600; }
+.compatReason {
+  color: var(--p600);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bannerActions { display: flex; gap: 8px; margin-left: auto; }
+.rateBtn, .skipBtn {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--p300);
+  color: var(--p700);
+  background: var(--white);
+  transition: background 0.15s, transform 0.1s;
+}
+.rateBtn:hover, .skipBtn:hover { background: var(--p100); }
+.skipBtn:active, .rateBtn:active { transform: scale(0.96); }
+
+/* ── hearts ── */
+.hearts { display: flex; gap: 6px; justify-content: center; margin: 6px 0 14px; }
+.heart { line-height: 1; transition: transform 0.12s; }
+.heart:hover { transform: scale(1.18); }
+
+/* ── rate overlay ── */
+.rateOverlay {
+  position: fixed; inset: 0; z-index: 50;
+  background: rgba(42, 10, 24, 0.45);
+  display: flex; align-items: center; justify-content: center;
+  padding: 1.5rem;
+  backdrop-filter: blur(3px);
+}
+.rateCard {
+  background: var(--white);
+  border-radius: var(--radius-xl);
+  padding: 26px 22px;
+  max-width: 340px;
+  width: 100%;
+  text-align: center;
+  box-shadow: var(--shadow-lg);
+}
+.rateTitle {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 17px;
+  color: var(--ink);
+}
+.rateSub { font-size: 12.5px; color: var(--ink3); margin-top: 6px; }
+.rateActions { display: flex; flex-direction: column; gap: 10px; align-items: center; }
+.rateDone {
+  width: 100%;
+  padding: 11px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--p400), var(--p600));
+  color: #fff;
+  font-weight: 600;
+  font-size: 14px;
+}
+.rateSkipLink { font-size: 12.5px; color: var(--ink3); }
+.rateSkipLink:hover { color: var(--p500); }

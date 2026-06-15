@@ -5,7 +5,7 @@ import useStore from '../store/useStore'
 import styles from './Welcome.module.css'
 
 export default function Welcome() {
-  const { user, initUser, setPage } = useStore()
+  const { user, initUser, setPage, setAccountType } = useStore()
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -13,8 +13,13 @@ export default function Welcome() {
     setPage('welcome')
   }, [])
 
-  const handleStart = () => navigate('/intent')
-  const handleLogin = () => navigate('/login')
+  // Permanent account → sign up first, then build profile
+  const handleCreateProfile = () => navigate('/login')
+  // Temporary identity → straight into the (optional) profile, cache only
+  const handleAnonymous = () => {
+    setAccountType('temporary')
+    navigate('/setup')
+  }
 
   const particles = Array.from({ length: 18 }, (_, i) => i)
 
@@ -120,17 +125,14 @@ export default function Welcome() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.8 }}
         >
-          <button className={styles.btnPrimary} onClick={handleStart}>
-            find my match
+          <button className={styles.btnPrimary} onClick={handleCreateProfile}>
+            create a profile
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
-          <button className={styles.btnSoft} onClick={() => navigate('/companion')}>
-            ✨ warm up with Soft, our AI
-          </button>
-          <button className={styles.btnGhost} onClick={handleLogin}>
-            log in to keep my identity
+          <button className={styles.btnGhost} onClick={handleAnonymous}>
+            just chat anonymously →
           </button>
         </motion.div>
 
@@ -140,8 +142,8 @@ export default function Welcome() {
           animate={{ opacity: 1 }}
           transition={{ delay: 1 }}
         >
-          No account needed to start. Your identity is cached locally.<br />
-          Create an account to keep it forever.
+          Anonymous lives only in this browser — clear it and you're gone.<br />
+          A profile keeps your identity & rating across devices.
         </motion.p>
       </motion.div>
     </div>

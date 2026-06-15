@@ -78,54 +78,6 @@ app.get('/api/stats', (req, res) => {
   })
 })
 
-// --- AI Companion ("Soft") ---
-// Optional: only lights up if ANTHROPIC_API_KEY is set in the environment.
-// The frontend has a full offline fallback, so this is purely an upgrade path.
-const SOFT_SYSTEM = `You are "Soft", the warm, low-pressure AI companion inside SoftMatch,
-an anonymous matching app. Talk like a thoughtful friend at 2am, never like a form or a therapist bot.
-Keep replies short (1-3 sentences), lowercase-casual, emotionally attuned. Ask one gentle follow-up
-question that helps reveal the person's interests, vibe, or what kind of connection they need.
-Never ask for real names, photos, or personal identifying info.`
-
-app.post('/api/companion', async (req, res) => {
-  const { history = [] } = req.body || {}
-  const apiKey = process.env.ANTHROPIC_API_KEY
-
-  if (!apiKey) {
-    // Tell the client to use its offline brain
-    return res.status(503).json({ error: 'companion_offline' })
-  }
-
-  try {
-    const messages = history.map(m => ({
-      role: m.isMe ? 'user' : 'assistant',
-      content: m.text,
-    }))
-
-    const r = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 200,
-        system: SOFT_SYSTEM,
-        messages,
-      }),
-    })
-
-    const data = await r.json()
-    const reply = data?.content?.[0]?.text?.trim() || "i'm here. tell me more?"
-    res.json({ reply })
-  } catch (err) {
-    console.error('[companion] error:', err.message)
-    res.status(503).json({ error: 'companion_offline' })
-  }
-})
-
 // --- Socket.IO ---
 io.on('connection', (socket) => {
   console.log(`[+] connected: ${socket.id}`)

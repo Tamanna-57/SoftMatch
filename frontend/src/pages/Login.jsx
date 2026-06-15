@@ -6,7 +6,7 @@ import styles from './Login.module.css'
 
 export default function Login() {
   const navigate = useNavigate()
-  const { user, setLoggedIn, updateUser } = useStore()
+  const { user, initUser, setLoggedIn, updateUser, onboardingComplete } = useStore()
   const [mode, setMode] = useState('login') // login | signup
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -18,12 +18,14 @@ export default function Login() {
     setLoading(true)
     setError('')
 
-    // Simulate auth (replace with real API call)
+    // Simulate auth (replace with real API call once the DB is wired)
     setTimeout(() => {
       setLoading(false)
-      setLoggedIn(true)
+      initUser()
+      setLoggedIn(true) // marks accountType = 'permanent'
       updateUser({ email, isLoggedIn: true })
-      navigate('/matches')
+      // returning users with a profile skip straight to matches
+      navigate(onboardingComplete ? '/matches' : '/setup')
     }, 900)
   }
 
@@ -111,7 +113,10 @@ export default function Login() {
             {mode === 'login' ? "don't have an account? sign up" : 'already have one? log in'}
           </button>
 
-          <button className={styles.skipBtn} onClick={() => navigate('/intent')}>
+          <button className={styles.skipBtn} onClick={() => {
+            useStore.getState().setAccountType('temporary')
+            navigate('/setup')
+          }}>
             continue without account →
           </button>
         </motion.div>
