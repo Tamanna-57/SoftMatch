@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import useStore from '../store/useStore'
 import { getRatingLabel } from '../utils/matching'
+import { disconnectSocket } from '../utils/socket'
 import { PROFILE_FIELDS, FILTERABLE } from '../utils/attributes'
 import styles from './Profile.module.css'
 
@@ -104,6 +105,7 @@ export default function Profile() {
           )}
           <button className={styles.dangerBtn} onClick={() => {
             if (confirm('This wipes your identity, profile and chats from this device. Sure?')) {
+              disconnectSocket()
               clearIdentity()
               navigate('/')
             }

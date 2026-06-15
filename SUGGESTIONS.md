@@ -35,12 +35,20 @@ living file — treat it as the running brain of the project.
 
 ## 2. Database — what to use & when
 
-Right now there is **no database**. The backend keeps everything in memory
-(`Map`s in `server.js`) and the frontend persists your profile in the browser
-(`localStorage` via Zustand). That's perfect for a demo, but everything is lost
-on refresh/server-restart and there's no real multi-device or moderation.
+**Now live: MongoDB Atlas.** The backend (`backend/server.js` + `backend/lib/`)
+persists everything in MongoDB — `users` (identity + profile + prefs + rating),
+`ratings`, `messages` (TTL 7 days), and `reports`. Matching runs server-side
+against *every registered user* (`backend/lib/matching.js`), so two people who
+sign up at different times still match. Auth is real (bcrypt + JWT). The backend
+is containerized for Google Cloud Run (`backend/Dockerfile`); see `DEPLOY.md`.
+The frontend still caches the local user in `localStorage` via Zustand, but the
+database is the source of truth.
 
-### Recommended stack: **PostgreSQL + Prisma** (or Supabase to skip hosting)
+> The notes below are the original plan (we chose Mongo per the product owner).
+> Kept for the AI-matching roadmap — if we add semantic matching later,
+> **Atlas Vector Search** covers embeddings on MongoDB without a second store.
+
+### Earlier recommendation: **PostgreSQL + Prisma** (or Supabase to skip hosting)
 
 Why Postgres over Mongo for *this* app:
 - Matching is relational ("users with overlapping interests, compatible hard

@@ -20,6 +20,9 @@ const useStore = create(
       user: null,
       // 'temporary' = anonymous (cache only) | 'permanent' = account
       accountType: null,
+      // JWT from the backend for permanent accounts
+      token: null,
+      setToken: (token) => set({ token }),
 
       initUser: () => {
         if (!get().user) {
@@ -41,6 +44,26 @@ const useStore = create(
       setLoggedIn: (status) => set(state => ({
         accountType: status ? 'permanent' : state.accountType,
         user: { ...state.user, isLoggedIn: status }
+      })),
+
+      // Adopt the identity + saved profile the server returns on signup/login.
+      // On a new device this restores the user's account, rating and profile.
+      applyServerAuth: ({ token, user: srvUser, email, profile, prefs, onboarded }) => set(state => ({
+        token: token ?? state.token,
+        accountType: 'permanent',
+        user: {
+          ...state.user,
+          id: srvUser?.userId || state.user?.id,
+          username: srvUser?.username || state.user?.username,
+          rating: srvUser?.rating ?? state.user?.rating ?? 0,
+          ratingCount: srvUser?.ratingCount ?? state.user?.ratingCount ?? 0,
+          email: email ?? state.user?.email,
+          isLoggedIn: true,
+        },
+        // Only overwrite local profile/prefs if the server has them stored.
+        profile: profile || state.profile,
+        prefs: prefs || state.prefs,
+        onboardingComplete: onboarded ?? state.onboardingComplete,
       })),
 
       // ── Profile (what you are) ────────────────────────────
@@ -94,6 +117,10 @@ const useStore = create(
 
       // ── Conversations ─────────────────────────────────────
       conversations: {},
+      // Replace a room's messages wholesale (used to load server history).
+      setConversation: (matchId, messages) => set(state => ({
+        conversations: { ...state.conversations, [matchId]: messages }
+      })),
       addMessage: (matchId, message) => set(state => ({
         conversations: {
           ...state.conversations,
@@ -121,7 +148,7 @@ const useStore = create(
       // Wipe everything (used by "chat anonymously → start over" / logout)
       clearIdentity: () => {
         set({
-          user: null, accountType: null,
+          user: null, accountType: null, token: null,
           profile: emptyProfile(), prefs: emptyPrefs(),
           onboardingComplete: false, matches: [], activeMatch: null,
           skipped: [], ratingsGiven: {}, conversations: {},
@@ -135,6 +162,7 @@ const useStore = create(
       partialize: (state) => ({
         user: state.user,
         accountType: state.accountType,
+        token: state.token,
         profile: state.profile,
         prefs: state.prefs,
         onboardingComplete: state.onboardingComplete,
