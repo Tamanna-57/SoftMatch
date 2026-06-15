@@ -2,11 +2,12 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import useStore from '../store/useStore'
+import { api } from '../utils/api'
 import styles from './Login.module.css'
 
 export default function Login() {
   const navigate = useNavigate()
-  const { user, initUser, setLoggedIn, updateUser, onboardingComplete } = useStore()
+  const { user, initUser, applyServerAuth, profile } = useStore()
   const [mode, setMode] = useState('login') // login | signup
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -17,16 +18,29 @@ export default function Login() {
     if (!email || !password) { setError('please fill all fields'); return }
     setLoading(true)
     setError('')
+    initUser()
 
-    // Simulate auth (replace with real API call once the DB is wired)
-    setTimeout(() => {
+    try {
+      const cur = useStore.getState().user
+      let result
+      if (mode === 'signup') {
+        result = await api.signup({
+          email, password,
+          userId: cur.id,
+          username: profile.name || cur.username,
+        })
+      } else {
+        result = await api.login({ email, password })
+      }
+      applyServerAuth(result)
+      // returning users with a saved profile go straight to matches
+      const onboarded = useStore.getState().onboardingComplete
+      navigate(onboarded ? '/matches' : '/setup')
+    } catch (e) {
+      setError(e.message || 'something went wrong')
+    } finally {
       setLoading(false)
-      initUser()
-      setLoggedIn(true) // marks accountType = 'permanent'
-      updateUser({ email, isLoggedIn: true })
-      // returning users with a profile skip straight to matches
-      navigate(onboardingComplete ? '/matches' : '/setup')
-    }, 900)
+    }
   }
 
   return (

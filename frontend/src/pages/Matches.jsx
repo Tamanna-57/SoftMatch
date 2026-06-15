@@ -1,79 +1,52 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import useStore from '../store/useStore'
-import { rankMatches, getRatingLabel, getCompatibilityColor } from '../utils/matching'
-import { CITIES, GENDERS, RELATIONSHIP, SMOKING, HOBBIES } from '../utils/attributes'
+import { getRatingLabel, getCompatibilityColor } from '../utils/matching'
+import { api } from '../utils/api'
+import { connectSocket } from '../utils/socket'
 import styles from './Matches.module.css'
-
-const NAMES = ['NightThinker','CodeNomad','LostFounder','QuietReader','VelvetBloom','LunarFox','AmberRiver','SilentComet','BoldPoet','CalmLens']
-
-function rand(arr) { return arr[Math.floor(Math.random() * arr.length)] }
-function sample(arr, n) {
-  const a = [...arr].sort(() => Math.random() - 0.5)
-  return a.slice(0, n)
-}
-
-// A pool of full anonymous profiles. Their prefs are mostly lenient so the
-// user's own preferences do the filtering — demonstrating the two-way logic.
-function generateDemoPool() {
-  return Array.from({ length: 9 }, (_, i) => {
-    const ratingCount = Math.floor(Math.random() * 40)
-    return {
-      id: `demo-${i}`,
-      username: `${NAMES[i % NAMES.length]}_${10 + i}`,
-      rating: ratingCount ? +(3 + Math.random() * 2).toFixed(1) : 0,
-      ratingCount,
-      profile: {
-        name: Math.random() > 0.5 ? '' : NAMES[i % NAMES.length],
-        age: 19 + Math.floor(Math.random() * 16),
-        gender: rand(GENDERS),
-        city: rand(CITIES),
-        relationship: rand(RELATIONSHIP),
-        smoking: rand(SMOKING),
-        drinking: rand(['never', 'socially', 'regularly']),
-        kids: rand(["don't have", 'want someday', "don't want"]),
-        politics: null,
-        hobbies: sample(HOBBIES, 3 + Math.floor(Math.random() * 3)),
-        bio: '',
-      },
-      // lenient: they accept anyone (so the user's filters are what matters)
-      prefs: { ageMin: 18, ageMax: 60, gender: [], city: [], relationship: [], smoking: [], drinking: [], kids: [] },
-    }
-  })
-}
 
 export default function Matches() {
   const navigate = useNavigate()
   const { user, profile, prefs, matches, setMatches, setActiveMatch, skipped } = useStore()
   const [searching, setSearching] = useState(true)
+  const [error, setError] = useState(null)
+
+  const loadMatches = useCallback(async () => {
+    if (!user) return
+    setSearching(true)
+    setError(null)
+    try {
+      const { matches: found } = await api.getMatches({
+        userId: user.id,
+        username: profile.name || user.username,
+        profile,
+        prefs,
+        skipped,
+      })
+      setMatches(found)
+    } catch (e) {
+      setError(e.message || 'could not reach the server')
+      setMatches([])
+    } finally {
+      setSearching(false)
+    }
+  }, [user, profile, prefs, skipped, setMatches])
 
   useEffect(() => {
     if (!user) { navigate('/'); return }
-    setSearching(true)
-    const t = setTimeout(() => {
-      const me = { profile, prefs }
-      const pool = generateDemoPool().filter(c => !skipped.includes(c.id))
-      setMatches(rankMatches(me, pool))
-      setSearching(false)
-    }, 1400)
-    return () => clearTimeout(t)
+    // Connect the realtime socket so we're marked online + reachable for chat.
+    connectSocket(user.id)
+    // Initial load on mount — intentional one-shot fetch.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadMatches()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const handleOpenChat = (match) => {
     setActiveMatch(match)
     navigate(`/chat/${match.id}`)
-  }
-
-  const reroll = () => {
-    setSearching(true)
-    setMatches([])
-    setTimeout(() => {
-      const pool = generateDemoPool().filter(c => !skipped.includes(c.id))
-      setMatches(rankMatches({ profile, prefs }, pool))
-      setSearching(false)
-    }, 1000)
   }
 
   return (
@@ -111,7 +84,7 @@ export default function Matches() {
                   {matches.length} {matches.length === 1 ? 'person fits' : 'people fit'} both ways
                 </p>
               </div>
-              <button className={styles.refreshBtn} onClick={reroll}>
+              <button className={styles.refreshBtn} onClick={loadMatches}>
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                   <path d="M14 8a6 6 0 11-2-4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
                   <path d="M14 3v3h-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -126,12 +99,24 @@ export default function Matches() {
                 ))}
               </AnimatePresence>
 
-              {matches.length === 0 && (
+              {matches.length === 0 && !error && (
                 <div className={styles.empty}>
-                  <div className={styles.emptyIcon}>🔍</div>
+                  <div className={styles.emptyIcon}>🌱</div>
                   <p className={styles.emptyTitle}>no two-way matches yet</p>
-                  <p className={styles.emptySub}>your filters might be strict. try loosening a preference.</p>
+                  <p className={styles.emptySub}>
+                    either your filters are strict, or not enough people are here yet.
+                    invite a friend, or loosen a preference.
+                  </p>
                   <button className={styles.emptyBtn} onClick={() => navigate('/preferences')}>edit preferences</button>
+                </div>
+              )}
+
+              {error && (
+                <div className={styles.empty}>
+                  <div className={styles.emptyIcon}>⚠️</div>
+                  <p className={styles.emptyTitle}>couldn't load matches</p>
+                  <p className={styles.emptySub}>{error}</p>
+                  <button className={styles.emptyBtn} onClick={loadMatches}>try again</button>
                 </div>
               )}
             </div>
@@ -143,10 +128,10 @@ export default function Matches() {
 }
 
 function MatchCard({ m, idx, onOpen }) {
-  const display = m.profile.name || m.username
+  const display = m.profile?.name || m.username
   const r = getRatingLabel(m.rating, m.ratingCount)
   const color = getCompatibilityColor(m.match.score)
-  const meta = [m.profile.age, m.profile.city, m.profile.relationship].filter(Boolean).join(' · ')
+  const meta = [m.profile?.age, m.profile?.city, m.profile?.relationship].filter(Boolean).join(' · ')
 
   return (
     <motion.div
@@ -161,6 +146,7 @@ function MatchCard({ m, idx, onOpen }) {
         <div className={styles.cardInfo}>
           <div className={styles.cardName}>
             {display}
+            {m.online && <span className={styles.onlineDot} title="online now" />}
             <span className={styles.ratingBadge} style={{ color: r.color, borderColor: r.color + '40', background: r.color + '12' }}>
               {m.ratingCount ? `★ ${m.rating}` : '☆'} · {r.label}
             </span>
@@ -178,7 +164,7 @@ function MatchCard({ m, idx, onOpen }) {
         </ul>
       )}
 
-      {m.profile.hobbies?.length > 0 && (
+      {m.profile?.hobbies?.length > 0 && (
         <div className={styles.tagRow}>
           {m.profile.hobbies.slice(0, 4).map(h => <span key={h} className={styles.tag}>{h}</span>)}
         </div>

@@ -3,11 +3,10 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate, useParams } from 'react-router-dom'
 import { v4 as uuidv4 } from 'uuid'
 import useStore from '../store/useStore'
-import { getSocket } from '../utils/socket'
+import { connectSocket, getSocket } from '../utils/socket'
 import { getRatingLabel } from '../utils/matching'
+import { api } from '../utils/api'
 import styles from './Chat.module.css'
-
-const TYPING_DELAY = 1400
 
 // Heart rating picker (5 hearts, no comments)
 function HeartPicker({ value, hover, setHover, onPick, size = 22 }) {
@@ -28,7 +27,7 @@ export default function Chat() {
   const navigate = useNavigate()
   const {
     user, activeMatch, accountType,
-    conversations, addMessage, addNotification,
+    conversations, addMessage, setConversation, addNotification,
     skipMatch, rateMatch, ratingsGiven,
   } = useStore()
 
@@ -37,7 +36,7 @@ export default function Chat() {
   const [showMenu, setShowMenu] = useState(false)
   const [showRate, setShowRate] = useState(false)
   const [hover, setHover] = useState(0)
-  const [connectionStatus, setConnectionStatus] = useState('demo')
+  const [connectionStatus, setConnectionStatus] = useState('connecting')
   const bottomRef = useRef(null)
   const typingTimeout = useRef(null)
 
@@ -47,10 +46,37 @@ export default function Chat() {
 
   useEffect(() => {
     if (!user || !match) return
-    const socket = getSocket()
-    socket.on('connect', () => setConnectionStatus('connected'))
-    socket.on('connect_error', () => setConnectionStatus('demo'))
-    socket.emit('join_room', { roomId: matchId, userId: user.id, username: user.username })
+    const socket = connectSocket(user.id)
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (socket.connected) setConnectionStatus('connected')
+
+    const onConnect = () => {
+      setConnectionStatus('connected')
+      socket.emit('register', { userId: user.id })
+      socket.emit('join_room', { roomId: matchId, userId: user.id, username: user.username })
+    }
+    const onDisconnect = () => setConnectionStatus('offline')
+    const onConnectError = () => setConnectionStatus('offline')
+
+    socket.on('connect', onConnect)
+    socket.on('disconnect', onDisconnect)
+    socket.on('connect_error', onConnectError)
+    if (socket.connected) {
+      socket.emit('join_room', { roomId: matchId, userId: user.id, username: user.username })
+    }
+
+    // Server sends the persisted conversation history on join.
+    socket.on('history', ({ roomId, messages: hist }) => {
+      if (roomId !== matchId) return
+      setConversation(matchId, hist.map(m => ({
+        id: m.id,
+        text: m.text,
+        senderId: m.senderId,
+        senderName: m.senderName,
+        isMe: m.senderId === user.id,
+        timestamp: new Date(m.createdAt).getTime(),
+      })))
+    })
 
     socket.on('message', (msg) => {
       if (msg.senderId !== user.id) {
@@ -67,7 +93,11 @@ export default function Chat() {
     })
 
     return () => {
-      socket.off('message'); socket.off('typing'); socket.off('connect'); socket.off('connect_error')
+      socket.emit('leave_room', { roomId: matchId, userId: user.id })
+      socket.off('connect', onConnect)
+      socket.off('disconnect', onDisconnect)
+      socket.off('connect_error', onConnectError)
+      socket.off('history'); socket.off('message'); socket.off('typing')
       clearTimeout(typingTimeout.current)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -97,26 +127,7 @@ export default function Chat() {
     const msg = { id: uuidv4(), text, senderId: user.id, senderName: user.username, isMe: true, timestamp: Date.now() }
     addMessage(matchId, msg)
     setInput('')
-    if (connectionStatus === 'connected') {
-      getSocket().emit('message', { roomId: matchId, ...msg })
-    } else {
-      simulateDemoReply()
-    }
-  }
-
-  const simulateDemoReply = () => {
-    const replies = [
-      "haha okay that's a good start", "ngl that's relatable",
-      "what made you get into that?", "okay tell me more",
-      "i was just thinking about that today", "real. so what's your week been like?",
-      "that's actually really interesting", "love that. what else are you into?",
-    ]
-    const reply = replies[Math.floor(Math.random() * replies.length)]
-    setTypingIndicator(true)
-    setTimeout(() => {
-      setTypingIndicator(false)
-      addMessage(matchId, { id: uuidv4(), text: reply, senderId: match.id, senderName: display, isMe: false, timestamp: Date.now() })
-    }, TYPING_DELAY + Math.random() * 700)
+    getSocket().emit('message', { roomId: matchId, ...msg })
   }
 
   const handleKeyDown = (e) => {
@@ -126,9 +137,12 @@ export default function Chat() {
     }
   }
 
-  const submitRating = (stars) => {
+  const submitRating = async (stars) => {
     rateMatch(matchId, stars)
     addNotification({ type: 'success', text: `you rated ${display} ${stars}★ — thanks for keeping it kind` })
+    try {
+      await api.rate({ fromUserId: user.id, toUserId: match.id, stars })
+    } catch { /* keep the local rating even if the network call fails */ }
   }
 
   // Skip: optionally rate, then leave this person and go back to matches
@@ -144,9 +158,12 @@ export default function Chat() {
     navigate('/matches')
   }
 
-  const handleReport = () => {
-    addNotification({ type: 'success', text: 'Report submitted. Thank you for keeping SoftMatch safe.' })
+  const handleReport = async () => {
     setShowMenu(false)
+    addNotification({ type: 'success', text: 'Report submitted. Thank you for keeping SoftMatch safe.' })
+    try {
+      await api.report({ reporterId: user.id, reportedId: match.id, reason: 'reported from chat', roomId: matchId })
+    } catch { /* non-blocking */ }
   }
 
   const timeLabel = (ts) => new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -167,7 +184,8 @@ export default function Chat() {
             <div className={styles.headerMeta}>
               {meta && <>{meta} · </>}
               <span style={{ color: r.color }}>{match.ratingCount ? `★ ${match.rating}` : r.label}</span>
-              {connectionStatus === 'demo' && <span className={styles.demoBadge}> · demo</span>}
+              {connectionStatus === 'connecting' && <span className={styles.demoBadge}> · connecting…</span>}
+              {connectionStatus === 'offline' && <span className={styles.demoBadge}> · offline</span>}
             </div>
           </div>
         </div>
