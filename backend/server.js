@@ -24,15 +24,19 @@ const {
 const app = express()
 const server = http.createServer(app)
 
-// CORS: allow the Vercel frontend (and localhost in dev). CLIENT_URL may be a
-// comma-separated list of allowed origins; "*" allows any.
-const allowedOrigins = (process.env.CLIENT_URL || 'http://localhost:5173')
+// CORS: allow the frontend to call the API. CLIENT_URL may be a comma-separated
+// list of allowed origins, or "*" for any. Defaults to "*" so a fresh deploy
+// works out of the box (this is a token-authenticated API with no cookies, so
+// open CORS is safe). Set CLIENT_URL to your exact Vercel URL to lock it down.
+const allowedOrigins = (process.env.CLIENT_URL || '*')
   .split(',')
-  .map(s => s.trim())
+  .map(s => s.trim().replace(/^["']|["']$/g, '')) // tolerate quotes/spaces
   .filter(Boolean)
 
+const allowAllOrigins = allowedOrigins.includes('*')
+
 function corsOrigin(origin, cb) {
-  if (!origin || allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+  if (allowAllOrigins || !origin || allowedOrigins.includes(origin)) {
     return cb(null, true)
   }
   return cb(new Error(`Origin ${origin} not allowed by CORS`))
