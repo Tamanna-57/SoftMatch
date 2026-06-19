@@ -157,6 +157,16 @@ const useStore = create(
     }),
     {
       name: 'softmatch-storage',
+      // Bump when the persisted shape/defaults change so old data is migrated.
+      version: 1,
+      migrate: (persisted) => {
+        // The default upper age was raised from 60 → 99 ("any"). Lift old saved
+        // values so returning users aren't silently filtering out 60+.
+        if (persisted?.prefs && persisted.prefs.ageMax === 60) {
+          persisted.prefs.ageMax = 99
+        }
+        return persisted
+      },
       // Only persist permanent accounts to "disk"; temporary identities
       // still use localStorage but the UI treats them as cache-only.
       partialize: (state) => ({

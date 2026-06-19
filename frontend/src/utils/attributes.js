@@ -61,7 +61,7 @@ export const emptyProfile = () => ({
 // Empty preferences — empty arrays / wide age = "don't care"
 export const emptyPrefs = () => ({
   ageMin: 18,
-  ageMax: 60,
+  ageMax: 99,
   gender: [],
   city: [],
   relationship: [],
