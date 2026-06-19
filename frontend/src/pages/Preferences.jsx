@@ -15,7 +15,7 @@ export default function Preferences() {
 
   const activeCount =
     FILTERABLE.reduce((n, f) => n + (prefs[f.key]?.length ? 1 : 0), 0) +
-    ((prefs.ageMin > 18 || prefs.ageMax < 60) ? 1 : 0)
+    ((prefs.ageMin > 18 || prefs.ageMax < 99) ? 1 : 0)
 
   return (
     <div className={styles.page}>
@@ -47,7 +47,7 @@ export default function Preferences() {
             <input
               type="number" min="18" max="99" className={styles.ageInput}
               value={prefs.ageMax}
-              onChange={e => setPref('ageMax', Number(e.target.value) || 60)}
+              onChange={e => setPref('ageMax', Number(e.target.value) || 99)}
             />
           </div>
         </section>

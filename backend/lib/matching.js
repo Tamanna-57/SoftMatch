@@ -21,10 +21,10 @@ function directionCheck(viewerPrefs = {}, targetProfile = {}) {
   // Age range
   if (targetProfile.age != null) {
     const min = viewerPrefs.ageMin ?? 18
-    const max = viewerPrefs.ageMax ?? 60
+    const max = viewerPrefs.ageMax ?? 99
     if (targetProfile.age < min || targetProfile.age > max) {
       blockers.push(`age ${targetProfile.age} is outside wanted ${min}–${max}`)
-    } else if (min > 18 || max < 60) {
+    } else if (min > 18 || max < 99) {
       reasons.push(`age fits (${targetProfile.age})`)
     }
   }

@@ -14,7 +14,7 @@ export default function Profile() {
 
   const filledFields = PROFILE_FIELDS.filter(f => profile[f.key])
   const activePrefs = FILTERABLE.filter(f => prefs[f.key]?.length)
-  const hasAgePref = prefs.ageMin > 18 || prefs.ageMax < 60
+  const hasAgePref = prefs.ageMin > 18 || prefs.ageMax < 99
 
   return (
     <div className={styles.page}>

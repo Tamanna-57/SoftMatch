@@ -23,7 +23,7 @@ function directionCheck(viewerPrefs, targetProfile) {
   if (targetProfile.age != null) {
     if (targetProfile.age < viewerPrefs.ageMin || targetProfile.age > viewerPrefs.ageMax) {
       blockers.push(`age ${targetProfile.age} is outside wanted ${viewerPrefs.ageMin}–${viewerPrefs.ageMax}`)
-    } else if (viewerPrefs.ageMin > 18 || viewerPrefs.ageMax < 60) {
+    } else if (viewerPrefs.ageMin > 18 || viewerPrefs.ageMax < 99) {
       reasons.push(`age fits (${targetProfile.age})`)
     }
   }
