@@ -1,12 +1,13 @@
 // ─────────────────────────────────────────────────────────────
 //  SoftMatch — REST API client
 //
-//  Talks to the real backend (Express + MongoDB). The base URL comes
-//  from VITE_API_URL (your Cloud Run URL in production). In local dev
-//  it falls back to the Vite proxy ('' → same origin → /api proxied).
+//  Talks to the real backend (Express + MongoDB). The base URL is
+//  resolved in ./config (VITE_API_URL → localhost proxy → production).
 // ─────────────────────────────────────────────────────────────
 
-const API_URL = import.meta.env.VITE_API_URL || ''
+import { API_BASE } from './config'
+
+const API_URL = API_BASE
 
 let authToken = null
 export const setAuthToken = (t) => { authToken = t }

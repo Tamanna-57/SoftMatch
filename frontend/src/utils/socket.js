@@ -1,9 +1,9 @@
 import { io } from 'socket.io-client'
+import { API_BASE } from './config'
 
-// Real-time server URL. In production set VITE_API_URL to your Cloud Run URL
-// (Socket.IO and REST share the same origin). In dev it falls back to the
-// Vite proxy on the same origin.
-const SOCKET_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_SOCKET_URL || ''
+// Real-time server URL — shares the backend base with the REST client
+// (resolved in ./config). Empty string means "same origin" (dev proxy).
+const SOCKET_URL = API_BASE
 
 let socket = null
 
