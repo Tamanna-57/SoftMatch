@@ -44,6 +44,12 @@ export default function Chat() {
   const match = activeMatch
   const myRating = ratingsGiven[matchId]
 
+  // Canonical socket room — IDENTICAL for both participants no matter who opens
+  // the chat. The URL's matchId is the *other* person's id (different on each
+  // side), so using it directly put the two users in separate rooms and their
+  // messages never met. Sorting both ids gives one shared room name.
+  const roomId = user ? [user.id, matchId].sort().join('__') : matchId
+
   useEffect(() => {
     if (!user || !match) return
     const socket = connectSocket(user.id)
@@ -53,7 +59,7 @@ export default function Chat() {
     const onConnect = () => {
       setConnectionStatus('connected')
       socket.emit('register', { userId: user.id })
-      socket.emit('join_room', { roomId: matchId, userId: user.id, username: user.username })
+      socket.emit('join_room', { roomId, userId: user.id, username: user.username })
     }
     const onDisconnect = () => setConnectionStatus('offline')
     const onConnectError = () => setConnectionStatus('offline')
@@ -62,12 +68,12 @@ export default function Chat() {
     socket.on('disconnect', onDisconnect)
     socket.on('connect_error', onConnectError)
     if (socket.connected) {
-      socket.emit('join_room', { roomId: matchId, userId: user.id, username: user.username })
+      socket.emit('join_room', { roomId, userId: user.id, username: user.username })
     }
 
     // Server sends the persisted conversation history on join.
-    socket.on('history', ({ roomId, messages: hist }) => {
-      if (roomId !== matchId) return
+    socket.on('history', ({ roomId: rid, messages: hist }) => {
+      if (rid !== roomId) return
       setConversation(matchId, hist.map(m => ({
         id: m.id,
         text: m.text,
@@ -93,7 +99,7 @@ export default function Chat() {
     })
 
     return () => {
-      socket.emit('leave_room', { roomId: matchId, userId: user.id })
+      socket.emit('leave_room', { roomId, userId: user.id })
       socket.off('connect', onConnect)
       socket.off('disconnect', onDisconnect)
       socket.off('connect_error', onConnectError)
@@ -127,13 +133,13 @@ export default function Chat() {
     const msg = { id: uuidv4(), text, senderId: user.id, senderName: user.username, isMe: true, timestamp: Date.now() }
     addMessage(matchId, msg)
     setInput('')
-    getSocket().emit('message', { roomId: matchId, ...msg })
+    getSocket().emit('message', { roomId, ...msg })
   }
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() }
     else if (connectionStatus === 'connected') {
-      getSocket().emit('typing', { roomId: matchId, userId: user.id })
+      getSocket().emit('typing', { roomId, userId: user.id })
     }
   }
 
