@@ -16,7 +16,7 @@ const { Server } = require('socket.io')
 const cors = require('cors')
 
 const { connectDB, collections } = require('./lib/db')
-const { rankMatches } = require('./lib/matching')
+const { rankMatchesHybrid } = require('./lib/matching')
 const {
   hashPassword, verifyPassword, signToken, optionalAuth,
 } = require('./lib/auth')
@@ -204,13 +204,15 @@ app.post('/api/matches', asyncRoute(async (req, res) => {
     .toArray()
 
   const candidates = pool.map(toPublic)
-  const ranked = rankMatches(
+  // Hybrid: full two-way matches first, then closest near-matches to fill in
+  // when the pool is small or the user's filters are strict.
+  const ranked = rankMatchesHybrid(
     { profile: me.profile || {}, prefs: me.prefs || {} },
-    candidates
+    candidates,
+    { minResults: 6, limit: 30 }
   )
-  // Trim to a reasonable page and bubble online users up within equal scores.
-  ranked.sort((a, b) => (b.match.score - a.match.score) || (Number(b.online) - Number(a.online)))
-  res.json({ matches: ranked.slice(0, 30), poolSize: candidates.length })
+  const exactCount = ranked.filter(m => !m.match.partial).length
+  res.json({ matches: ranked, exactCount, poolSize: candidates.length })
 }))
 
 // Rate another user (5 hearts, one rating per pair, updatable).

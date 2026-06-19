@@ -7,6 +7,16 @@ import { api } from '../utils/api'
 import { connectSocket } from '../utils/socket'
 import styles from './Matches.module.css'
 
+// Summary line that distinguishes full two-way matches from "close" ones.
+function matchSummary(matches) {
+  if (!matches.length) return 'no one yet'
+  const exact = matches.filter(m => !m.match.partial).length
+  const close = matches.length - exact
+  if (close === 0) return `${exact} ${exact === 1 ? 'person fits' : 'people fit'} both ways`
+  if (exact === 0) return `${close} close ${close === 1 ? 'match' : 'matches'} nearby`
+  return `${exact} fit both ways · ${close} close`
+}
+
 export default function Matches() {
   const navigate = useNavigate()
   const { user, profile, prefs, matches, setMatches, setActiveMatch, skipped } = useStore()
@@ -80,9 +90,7 @@ export default function Matches() {
             <div className={styles.pageHeader}>
               <div>
                 <h2 className={styles.pageTitle}>your matches</h2>
-                <p className={styles.pageSub}>
-                  {matches.length} {matches.length === 1 ? 'person fits' : 'people fit'} both ways
-                </p>
+                <p className={styles.pageSub}>{matchSummary(matches)}</p>
               </div>
               <button className={styles.refreshBtn} onClick={loadMatches}>
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -147,6 +155,7 @@ function MatchCard({ m, idx, onOpen }) {
           <div className={styles.cardName}>
             {display}
             {m.online && <span className={styles.onlineDot} title="online now" />}
+            {m.match.partial && <span className={styles.partialBadge}>close match</span>}
             <span className={styles.ratingBadge} style={{ color: r.color, borderColor: r.color + '40', background: r.color + '12' }}>
               {m.ratingCount ? `★ ${m.rating}` : '☆'} · {r.label}
             </span>
@@ -160,6 +169,14 @@ function MatchCard({ m, idx, onOpen }) {
         <ul className={styles.reasons}>
           {m.match.reasons.slice(0, 3).map((reason, i) => (
             <li key={i}><span className={styles.check}>✓</span> {reason}</li>
+          ))}
+        </ul>
+      )}
+
+      {m.match.partial && m.match.blockers?.length > 0 && (
+        <ul className={styles.misses}>
+          {m.match.blockers.slice(0, 2).map((b, i) => (
+            <li key={i}><span className={styles.missMark}>≈</span> {b}</li>
           ))}
         </ul>
       )}

@@ -87,7 +87,9 @@ function matchProfiles(me, other) {
 
   return {
     ok,
-    score: ok ? soft.score : 0,
+    // Soft compatibility is always computed so partial (near) matches can be
+    // ranked too. Whether it's a *full* two-way match is carried by `ok`.
+    score: soft.score,
     reasons,
     blockers: [
       ...theyFitMe.blockers.map(b => `they ${b}`),
@@ -96,7 +98,7 @@ function matchProfiles(me, other) {
   }
 }
 
-// Given me + a pool of candidates, return ranked valid matches.
+// Given me + a pool of candidates, return ranked valid (full two-way) matches.
 function rankMatches(me, pool) {
   return pool
     .map(other => ({ ...other, match: matchProfiles(me, other) }))
@@ -104,4 +106,37 @@ function rankMatches(me, pool) {
     .sort((a, b) => b.match.score - a.match.score)
 }
 
-module.exports = { directionCheck, softScore, matchProfiles, rankMatches }
+// Hybrid ranking: full two-way matches first (ranked by compatibility), then —
+// only if there are too few — the CLOSEST near-matches to fill the list. Each
+// near-match is flagged `partial: true`, its score reduced by how many of the
+// hard filters it misses, and its `blockers` explain what didn't fit.
+function rankMatchesHybrid(me, pool, { minResults = 6, limit = 30 } = {}) {
+  const scored = pool.map(other => ({ ...other, match: matchProfiles(me, other) }))
+
+  const exact = scored
+    .filter(c => c.match.ok)
+    .sort((a, b) => b.match.score - a.match.score)
+
+  if (exact.length >= minResults) return exact.slice(0, limit)
+
+  const partial = scored
+    .filter(c => !c.match.ok)
+    .map(c => ({
+      ...c,
+      match: {
+        ...c.match,
+        partial: true,
+        // dampen the % so a near-match never outranks a real one
+        score: Math.max(10, c.match.score - c.match.blockers.length * 12),
+      },
+    }))
+    // closest first: fewest missed filters, then highest compatibility
+    .sort((a, b) =>
+      (a.match.blockers.length - b.match.blockers.length) ||
+      (b.match.score - a.match.score)
+    )
+
+  return exact.concat(partial).slice(0, limit)
+}
+
+module.exports = { directionCheck, softScore, matchProfiles, rankMatches, rankMatchesHybrid }
